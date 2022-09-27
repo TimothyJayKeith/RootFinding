@@ -15,6 +15,7 @@ from scipy import linalg as la
 from math import fabs                      # faster than np.abs for small arrays
 from yroots.utils import memoize, transform, get_var_list, isNumber
 from copy import copy
+from MyIntervalShrink import NewUnitArea
 
 
 INTERVAL_REDUCTION_FUNCS = ["improveBound", "getBoundingParallelogram"]
@@ -99,7 +100,7 @@ class IntervalData:
         self.interval_results["Too Deep"] = []
         self.interval_results["getBoundingInterval"] = []
         self.total_area = np.prod(self.b-self.a)
-        self.current_area = 0.
+        self.current_area = 1.0
         self.tick = 0
 
         #For polishing code
@@ -154,7 +155,7 @@ class IntervalData:
         self.polish_interval_num += 1
         self.polish_a, self.polish_b = self.polish_intervals[self.polish_interval_num]
         self.total_area = np.prod(self.polish_b-self.polish_a)
-        self.current_area = 0.
+        self.current_area = 1.0
 
     def get_subintervals(self, a, b, polys, errors, runChecks):
             """Gets the subintervals to divide a search interval into.
@@ -266,7 +267,7 @@ class IntervalData:
         '''
         if not self.polishing:
             self.interval_results[name].append(interval)
-        self.current_area += np.prod(interval[1] - interval[0])
+        self.current_area = NewUnitArea(interval, self.current_area)
 
     def track_interval_bounded(self, name, interval, bounding_interval):
             ''' Stores what happened to a given interval when we use a new bounding interval inside it
@@ -281,7 +282,7 @@ class IntervalData:
             '''
             if not self.polishing:
                 self.interval_results[name].append(interval)
-            self.current_area += np.prod(interval[1] - interval[0]) - np.prod(bounding_interval[1] - bounding_interval[0])
+            self.current_area =  NewUnitArea(interval, self.current_area)
 
     def print_progress(self):
         ''' Prints the progress of subdivision solve. Only prints every 100th time this function is
@@ -291,11 +292,11 @@ class IntervalData:
         if self.tick >= 100:
             self.tick = 0
             if not self.polishing:
-                print("\rPercent Finished: {}%       ".format(round(100*self.current_area/self.total_area,2)), end='')
+                print("\rPercent Finished: {}%       ".format(round((1-np.log(self.current_area))*100, 2), end=''))
             else:
                 print_string =  '\rPolishing Round: {}'.format(self.polish_num)
                 print_string += ' Interval: {}/{}:'.format(self.polish_interval_num, len(self.polish_intervals))
-                print_string += " Percent Finished: {}%{}".format(round(100*self.current_area/self.total_area,2), ' '*20)
+                print_string += " Percent Finished: {}%{}".format(round(100*(1 - self.current_area), 2), ' '*20)
                 print(print_string, end='')
 
     def print_results(self):

@@ -14,7 +14,8 @@ from yroots.utils import clean_zeros_from_matrix, slice_top, MacaulayError, \
                          get_var_list, ConditioningError, TooManyRoots, \
                          Tolerances, solve_linear, memoize, Memoize, transform
 from yroots.polynomial import MultiCheb
-from yroots.IntervalChecks import IntervalData
+#from yroots.IntervalChecks import IntervalData
+from IntervalChecks import IntervalData
 from yroots.RootTracker import RootTracker
 from itertools import product
 from matplotlib import pyplot as plt
